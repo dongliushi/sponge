@@ -30,12 +30,11 @@ WrappingInt32 wrap(uint64_t n, WrappingInt32 isn) {  // absolute seqno 转成 se
 //! has a different ISN.
 uint64_t unwrap(WrappingInt32 n, WrappingInt32 isn, uint64_t checkpoint) {
     // DUMMY_CODE(n, isn, checkpoint);
-    uint32_t checkpoint_32 = wrap(checkpoint, isn).raw_value();
-    int32_t offset = n.raw_value() - checkpoint_32;
-    if (offset < 0 && checkpoint + offset > checkpoint)
-        return checkpoint + static_cast<uint32_t>(offset);
-    if (offset > 0 && checkpoint + offset < checkpoint) {
-        return checkpoint - static_cast<uint32_t>(-offset);
-    }
+    uint32_t checkpoint_32 = wrap(checkpoint, isn).raw_value();  // 获取checkpoint在uint32下的映射。
+    int32_t offset = n.raw_value() - checkpoint_32;  // 计算checkpoint映射和n的距离，用有符号表示，需要表示负数。
+    if (offset < 0 && checkpoint + offset > checkpoint)      // 发生负溢出
+        return checkpoint + static_cast<uint32_t>(offset);   // 等同于checkpoint + UINT32_MAX + 1 + offset
+    if (offset > 0 && checkpoint + offset < checkpoint)      // 发生正溢出
+        return checkpoint - static_cast<uint32_t>(-offset);  // 等同于checkpoint - UINT32_MAX - 1 + offset
     return checkpoint + offset;
 }
