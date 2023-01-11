@@ -47,7 +47,7 @@ class StreamReassembler {
                     if (iter->_index + iter->_len > output.bytes_written()) {  // 这里判断插入是否有效
                         output.write(iter->_data_ptr->substr(output.bytes_written() - iter->_index));
                     }
-                    _storage.erase(iter++);
+                   iter = _storage.erase(iter);
                 } else
                     break;
             }
