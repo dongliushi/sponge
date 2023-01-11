@@ -29,7 +29,7 @@ class TCPSender {
 
     uint32_t _retransmission_timeout{0};
 
-    std::queue<TCPSegment> _segments_track{};
+    std::vector<TCPSegment> _segments_track{};
 
     //! our initial sequence number, the number for our SYN.
     WrappingInt32 _isn;

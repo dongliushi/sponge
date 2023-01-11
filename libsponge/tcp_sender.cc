@@ -56,6 +56,7 @@ void TCPSender::fill_window() {
         // 调测试样例调出来的结果
         if (seg.length_in_sequence_space() > 0) {
             _next_seqno += seg.length_in_sequence_space();
+            _segments_track.emplace_back(seg);
             _segments_out.emplace(seg);
         } else break;
     }
@@ -72,7 +73,12 @@ void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_si
     _ackno = temp_ackno;
     _retransmission_timeout = _initial_retransmission_timeout;
     _consecutive_retransmissions = 0;
-    
+    for (auto iter = _segments_track.begin(); iter != _segments_track.end();) {
+        uint64_t abs_seqno = unwrap(iter->header().seqno, _isn, _ackno);
+        if (abs_seqno + iter->length_in_sequence_space() <= _ackno) {
+            _segments_track.erase(iter++);
+        } else break;
+    }
 }
 
 //! \param[in] ms_since_last_tick the number of milliseconds since the last call to this method
