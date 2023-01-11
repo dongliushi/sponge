@@ -17,6 +17,20 @@
 //! segments if the retransmission timer expires.
 class TCPSender {
   private:
+    bool _syn{false};
+
+    bool _fin{false};
+    
+    uint16_t _windows_size{1};
+
+    uint64_t _ackno{0};
+
+    uint32_t _consecutive_retransmissions{0};
+
+    uint32_t _retransmission_timeout{0};
+
+    std::queue<TCPSegment> _segments_track{};
+
     //! our initial sequence number, the number for our SYN.
     WrappingInt32 _isn;
 
