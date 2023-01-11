@@ -1,5 +1,6 @@
 #include "byte_stream.hh"
 
+#include <cmath>
 // Dummy implementation of a flow-controlled in-memory byte stream.
 
 // For Lab 0, please replace with a real implementation that passes the
@@ -8,11 +9,11 @@
 // You will need to add private members to the class declaration in `byte_stream.hh`
 
 template <typename... Targs>
-void DUMMY_CODE(Targs &&... /* unused */) {}
+void DUMMY_CODE(Targs &&.../* unused */) {}
 
 using namespace std;
 
-ByteStream::ByteStream(const size_t capacity):_capacity(capacity) { 
+ByteStream::ByteStream(const size_t capacity) : _capacity(capacity) {
     // DUMMY_CODE(capacity);
     _buffer.resize(capacity);
 }
@@ -20,10 +21,11 @@ ByteStream::ByteStream(const size_t capacity):_capacity(capacity) {
 size_t ByteStream::write(const string &data) {
     // DUMMY_CODE(data);
     size_t old_w = _writen;
-    for (auto& ch : data) {
+    for (auto &ch : data) {
         if (_writen - _readn < _capacity) {
             _buffer[_writen % _capacity] = ch;
-        } else break;
+        } else
+            break;
         ++_writen;
     }
     return _writen - old_w;
@@ -37,14 +39,14 @@ string ByteStream::peek_output(const size_t len) const {
     }
     std::string ret;
     for (size_t i = 0; i < len; i++) {
-       ret.push_back(_buffer[(_readn + i) % _capacity]);    
+        ret.push_back(_buffer[(_readn + i) % _capacity]);
     }
     return ret;
 }
 
 //! \param[in] len bytes will be removed from the output side of the buffer
-void ByteStream::pop_output(const size_t len) { 
-    // DUMMY_CODE(len); 
+void ByteStream::pop_output(const size_t len) {
+    // DUMMY_CODE(len);
     if (_writen - _readn < len) {
         throw runtime_error("pop_output argument too big");
     }
@@ -56,14 +58,13 @@ void ByteStream::pop_output(const size_t len) {
 //! \returns a string
 std::string ByteStream::read(const size_t len) {
     // DUMMY_CODE(len);
-    std::string ret = peek_output(len);
-    pop_output(len);
+    size_t temp_len = min(len, buffer_size());
+    std::string ret = peek_output(temp_len);
+    pop_output(temp_len);
     return ret;
 }
 
-void ByteStream::end_input() {
-    _end_input = true;
-}
+void ByteStream::end_input() { _end_input = true; }
 
 bool ByteStream::input_ended() const { return _end_input; }
 
@@ -71,12 +72,7 @@ size_t ByteStream::buffer_size() const { return _writen - _readn; }
 
 bool ByteStream::buffer_empty() const { return buffer_size() == 0; }
 
-bool ByteStream::eof() const {
-    if (_end_input && buffer_empty()) {
-        return true;
-    }
-    return false; 
-}
+bool ByteStream::eof() const { return _end_input && buffer_empty(); }
 
 size_t ByteStream::bytes_written() const { return _writen; }
 
