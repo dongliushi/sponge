@@ -54,12 +54,17 @@ void TCPSender::fill_window() {
         // 如果segment中未携带数据或SYN/FIN，则跳出循环，并且该segment不必发出
         // 就是防止窗口还没发完，但是buffer里的数据没有了然后一直循环中
         // 调测试样例调出来的结果
-        if (seg.length_in_sequence_space() > 0) {
-            _next_seqno += seg.length_in_sequence_space();
-            _segments_track.emplace_back(seg);
-            _segments_out.emplace(seg);
-        } else
+        if (seg.length_in_sequence_space() == 0)
             break;
+        // 接下来就是将nextseqno增加等处理
+        _next_seqno += seg.length_in_sequence_space();
+        _segments_track.emplace_back(seg);
+        _segments_out.emplace(seg);
+        // 如果没有启动定时器，则启动定时器
+        if (not _is_timer) {
+            _is_timer = true;
+            _tick_ms = 0;
+        }
     }
 }
 
@@ -69,35 +74,39 @@ void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_si
     // DUMMY_CODE(ackno, window_size);
     uint64_t temp_ackno = unwrap(ackno, _isn, _ackno);
     _windows_size = window_size;
-    if (not(temp_ackno > _ackno && temp_ackno <= _next_seqno)) // 判断ack是否为没收到过的
+    // 判断ack是否为没收到过的，是收到过的则直接结束
+    if (not(temp_ackno > _ackno && temp_ackno <= _next_seqno))
         return;
-    _tick_ms = 0;
     _ackno = temp_ackno;
     _retransmission_timeout = _initial_retransmission_timeout;
     _consecutive_retransmissions = 0;
     // 遍历_segments_track，将已经确认了的segment从中删除
-    for (auto iter = _segments_track.begin(); iter != _segments_track.end();) { 
+    for (auto iter = _segments_track.begin(); iter != _segments_track.end();) {
         uint64_t abs_seqno = unwrap(iter->header().seqno, _isn, _ackno);
         if (abs_seqno + iter->length_in_sequence_space() <= _ackno) {
             iter = _segments_track.erase(iter);
         } else
             break;
     }
+    if (_segments_track.empty()) {  // 当收到一个ACK并且所有包都被ACK了：关闭定时器
+        _is_timer = false;
+    } else {  // 当收到一个ACK并且仍有包未被ACK：重开定时器
+        _is_timer = true;
+        _tick_ms = 0;
+    }
 }
 
 //! \param[in] ms_since_last_tick the number of milliseconds since the last call to this method
 void TCPSender::tick(const size_t ms_since_last_tick) {
     // DUMMY_CODE(ms_since_last_tick);
-    if (bytes_in_flight() == 0) {
-        _tick_ms = 0;
+    if (not _is_timer)
         return;
-    }
     _tick_ms += ms_since_last_tick;
     if (_tick_ms >= _retransmission_timeout) {
         _tick_ms = 0;
         _segments_out.emplace(_segments_track.front());
         _consecutive_retransmissions++;
-        if (_windows_size != 0) // 窗口为0的时候不进行指数退避
+        if (_windows_size != 0)  // 窗口为0的时候不进行指数退避
             _retransmission_timeout *= 2;
     }
 }
