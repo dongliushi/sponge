@@ -117,10 +117,6 @@ class StreamReassembler {
     //! \brief Is the internal state empty (other than the output stream)?
     //! \returns `true` if no substrings are waiting to be assembled
     bool empty() const;
-
-    size_t first_unassembled() const { return _output.bytes_written(); }
-    
-    size_t first_unacceptable() const { return _output.bytes_read() + _capacity; }
 };
 
 #endif  // SPONGE_LIBSPONGE_STREAM_REASSEMBLER_HH
