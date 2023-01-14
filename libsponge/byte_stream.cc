@@ -20,6 +20,8 @@ ByteStream::ByteStream(const size_t capacity) : _capacity(capacity) {
 
 size_t ByteStream::write(const string &data) {
     // DUMMY_CODE(data);
+    if (_end_input)
+        return 0;
     size_t old_w = _writen;
     for (auto &ch : data) {
         if (_writen - _readn < _capacity) {
@@ -34,9 +36,6 @@ size_t ByteStream::write(const string &data) {
 //! \param[in] len bytes will be copied from the output side of the buffer
 string ByteStream::peek_output(const size_t len) const {
     // DUMMY_CODE(len);
-    if (_writen - _readn < len) {
-        throw runtime_error("peek_output argument too big");
-    }
     std::string ret;
     for (size_t i = 0; i < len; i++) {
         ret.push_back(_buffer[(_readn + i) % _capacity]);
@@ -47,9 +46,6 @@ string ByteStream::peek_output(const size_t len) const {
 //! \param[in] len bytes will be removed from the output side of the buffer
 void ByteStream::pop_output(const size_t len) {
     // DUMMY_CODE(len);
-    if (_writen - _readn < len) {
-        throw runtime_error("pop_output argument too big");
-    }
     _readn += len;
 }
 
@@ -78,4 +74,4 @@ size_t ByteStream::bytes_written() const { return _writen; }
 
 size_t ByteStream::bytes_read() const { return _readn; }
 
-size_t ByteStream::remaining_capacity() const { return _capacity - (_writen - _readn); }
+size_t ByteStream::remaining_capacity() const { return _capacity - buffer_size(); }
