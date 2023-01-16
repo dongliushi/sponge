@@ -9,6 +9,15 @@
 //! \brief A complete endpoint of a TCP connection
 class TCPConnection {
   private:
+    // my code
+    bool _is_active{true};
+
+    size_t _time_since_last_segment_received{0};
+
+    void reset_connection(bool send_rst);
+
+    void send_data();
+    
     TCPConfig _cfg;
     TCPReceiver _receiver{_cfg.recv_capacity};
     TCPSender _sender{_cfg.send_capacity, _cfg.rt_timeout, _cfg.fixed_isn};
