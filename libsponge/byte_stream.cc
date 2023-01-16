@@ -15,38 +15,31 @@ using namespace std;
 
 ByteStream::ByteStream(const size_t capacity) : _capacity(capacity) {
     // DUMMY_CODE(capacity);
-    _buffer.resize(capacity);
 }
 
 size_t ByteStream::write(const string &data) {
     // DUMMY_CODE(data);
     if (_end_input)
         return 0;
-    size_t old_w = _writen;
-    for (auto &ch : data) {
-        if (_writen - _readn < _capacity) {
-            _buffer[_writen % _capacity] = ch;
-        } else
-            break;
-        ++_writen;
-    }
-    return _writen - old_w;
+    size_t write_size = min(data.size(), remaining_capacity());
+    _buffer.append(data, 0, write_size);
+    _writen += write_size;
+    return write_size;
 }
 
 //! \param[in] len bytes will be copied from the output side of the buffer
 string ByteStream::peek_output(const size_t len) const {
     // DUMMY_CODE(len);
-    std::string ret;
-    for (size_t i = 0; i < len; i++) {
-        ret.push_back(_buffer[(_readn + i) % _capacity]);
-    }
-    return ret;
+    size_t temp_len = min(len, buffer_size());
+    return _buffer.substr(0, temp_len);
 }
 
 //! \param[in] len bytes will be removed from the output side of the buffer
 void ByteStream::pop_output(const size_t len) {
     // DUMMY_CODE(len);
-    _readn += len;
+    size_t temp_len = min(len, buffer_size());
+    _buffer.erase(0, temp_len);
+    _readn += temp_len;
 }
 
 //! Read (i.e., copy and then pop) the next "len" bytes of the stream
@@ -54,9 +47,8 @@ void ByteStream::pop_output(const size_t len) {
 //! \returns a string
 std::string ByteStream::read(const size_t len) {
     // DUMMY_CODE(len);
-    size_t temp_len = min(len, buffer_size());
-    std::string ret = peek_output(temp_len);
-    pop_output(temp_len);
+    std::string ret = peek_output(len);
+    pop_output(len);
     return ret;
 }
 
