@@ -29,7 +29,7 @@ uint64_t TCPSender::bytes_in_flight() const { return _next_seqno - _ackno; }
 
 void TCPSender::fill_window() {
     size_t current_windows_size = _windows_size > 0 ? _windows_size : 1;
-    while (not _fin && current_windows_size - bytes_in_flight() > 0) {
+    while (not _fin && current_windows_size > bytes_in_flight()) {
         TCPSegment seg;
         if (not _syn) {
             _syn = true;
